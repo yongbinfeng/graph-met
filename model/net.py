@@ -46,35 +46,6 @@ class Net(nn.Module):
         weights = self.graphnet(x_cont, x_cat, edge_index, batch)
         return torch.sigmoid(weights)
 
-def loss_fn(weights, prediction, truth, batch):
-    '''
-    qTx= truth[:,0]*torch.cos(truth[:,1])
-    qTy= truth[:,0]*torch.sin(truth[:,1])
-    qT = truth[:,0]
-    qTphi= truth[:,1]
-    METx = prediction[:,0]*torch.cos(prediction[:,1])
-    METy = prediction[:,0]*torch.sin(prediction[:,1])
-    MET  = prediction[:,0]
-    METphi = prediction[:,1]
-    lossMET    = (MET-qT)**2/qT
-    lossMETphi = 1.-torch.cos(METphi-qTphi)
-    
-    #loss = ( F.mse_loss(MET, qT, reduction='mean') +
-    #loss = ( F.mse_loss(MET, qT, reduction='mean') +
-    #F.mse_loss(METy, qTy, reduction='mean') ) / 2.
-    loss = torch.sqrt(lossMET.mean()*lossMETphi.mean())
-    '''
-    true_MET = truth[:,0]
-    true_METphi = truth[:,1]
-    px=prediction[:,0]
-    py=prediction[:,1]
-    true_px=true_MET*torch.cos(true_METphi)
-    true_py=true_MET*torch.sin(true_METphi)
-    METx = scatter_add(weights*px, batch)
-    METy = scatter_add(weights*py, batch)
-    loss=0.5*( ( METx + true_px)**2 + ( METy + true_py)**2 ).mean()
-    return loss
-
 def resolution(weights, prediction, truth, batch):
     
     def getdot(vx, vy):
@@ -112,16 +83,36 @@ def resolution(weights, prediction, truth, batch):
         u_paral_predict = getscale(v_paral_predict)-getscale(v_qT)
         v_perp_predict = vector - v_paral_predict
         u_perp_predict = getscale(v_perp_predict)
-        return [u_perp_predict.cpu().detach().numpy(), u_paral_predict.cpu().detach().numpy(), response.cpu().detach().numpy()]
+        return [u_perp_predict, u_paral_predict, response]
 
     resolutions= {
         'MET':      compute(-v_MET),
         'pfMET':    compute(v_pfMET),
         'puppiMET': compute(v_puppiMET)
     }
-    return resolutions, truth[:,0].cpu().detach().numpy()
+    return resolutions, truth[:,0]
 
 # maintain all metrics required in this dictionary- these are used in the training and evaluation loops
 metrics = {
     'resolution': resolution,
 }
+
+def loss_fn(weights, prediction, truth, batch):
+    '''
+    true_MET = truth[:,0]
+    true_METphi = truth[:,1]
+    px=prediction[:,0]
+    py=prediction[:,1]
+    true_px=true_MET*torch.cos(true_METphi)
+    true_py=true_MET*torch.sin(true_METphi)
+    METx = scatter_add(weights*px, batch)
+    METy = scatter_add(weights*py, batch)
+    loss=0.5*( ( METx + true_px)**2 + ( METy + true_py)**2 ).mean()
+    '''
+
+    resolutions, qT= metrics['resolution'](weights, prediction, truth, batch)
+    u_perp = resolutions['MET'][0]
+    u_par = resolutions['MET'][1]
+    loss=0.5*(u_perp**2 + u_par**2).mean() 
+    return loss
+
