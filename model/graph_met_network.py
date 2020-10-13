@@ -16,15 +16,15 @@ class GraphMETNetwork(nn.Module):
         self.embed_pdgid = nn.Embedding(7, hidden_dim//4)
         self.embed_pv = nn.Embedding(8, hidden_dim//4)
         
-        self.embed_continuous = nn.Sequential(nn.Linear(continuous_dim,hidden_dim//2),
-                                              nn.ELU(),
-                                              #nn.BatchNorm1d(hidden_dim//2) # uncomment if it starts overtraining
-                                             )
+        #self.embed_continuous = nn.Sequential(nn.Linear(continuous_dim,hidden_dim//2),
+        #                                      nn.ELU(),
+        #                                      #nn.BatchNorm1d(hidden_dim//2) # uncomment if it starts overtraining
+        #                                     )
 
-        self.embed_categorical = nn.Sequential(nn.Linear(3*hidden_dim//4,hidden_dim//2),
-                                               nn.ELU(),                                               
-                                               #nn.BatchNorm1d(hidden_dim//2)
-                                              )
+        #self.embed_categorical = nn.Sequential(nn.Linear(3*hidden_dim//4,hidden_dim//2),
+        #                                       nn.ELU(),                                               
+        #                                       #nn.BatchNorm1d(hidden_dim//2)
+        #                                      )
 
         self.encode_all = nn.Sequential(nn.Linear(hidden_dim, hidden_dim),
                                         nn.ELU()
@@ -45,7 +45,7 @@ class GraphMETNetwork(nn.Module):
         self.pdgs = [1, 2, 11, 13, 22, 130, 211]
 
     def forward(self, x_cont, x_cat, edge_index, batch):
-        emb_cont = self.embed_continuous(x_cont)        
+        #emb_cont = self.embed_continuous(x_cont)        
         emb_chrg = self.embed_charge(x_cat[:, 1] + 1)
         emb_pv = self.embed_pv(x_cat[:, 2])
 
@@ -54,9 +54,9 @@ class GraphMETNetwork(nn.Module):
             pdg_remap = torch.where(pdg_remap == pdgval, torch.full_like(pdg_remap, i), pdg_remap)
         emb_pdg = self.embed_pdgid(pdg_remap)
 
-        emb_cat = self.embed_categorical(torch.cat([emb_chrg, emb_pdg, emb_pv], dim=1))
+        #emb_cat = self.embed_categorical(torch.cat([emb_chrg, emb_pdg, emb_pv], dim=1))
         
-        emb = self.bn_all(self.encode_all(torch.cat([emb_cat, emb_cont], dim=1)))
+        emb = self.bn_all(self.encode_all(torch.cat([emb_chrg, emb_pdg, emb_pv, x_cont], dim=1)))
                 
         # graph convolution for continuous variables
         for co_conv in self.conv_continuous:

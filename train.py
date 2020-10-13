@@ -49,14 +49,14 @@ def train(model, optimizer, scheduler, loss_fn, dataloader, epoch):
             loss_avg.update(loss.item())
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
-    scheduler.step(np.mean(loss_avg_arr))
+            scheduler.step()
     print('Training epoch: {:02d}, MSE: {:.4f}'.format(epoch, np.mean(loss_avg_arr)))
 
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    dataloaders = data_loader.fetch_dataloader(data_dir=osp.join(os.environ['PWD'],'data'), 
-                                               batch_size=30, 
+    dataloaders = data_loader.fetch_dataloader(data_dir=osp.join(os.getcwd(),'data'), 
+                                               batch_size=180, 
                                                validation_split=.1)
     train_dl = dataloaders['train']
     test_dl = dataloaders['test']
@@ -66,7 +66,9 @@ if __name__ == '__main__':
     model = net.Net(8, 3).to('cuda')
     #optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=5e-3)
     optimizer = torch.optim.AdamW(model.parameters(),lr=0.001)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=500, threshold=0.05)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_dl), epochs=200,
+                                                    div_factor=1.0, final_div_factor=1.0)
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=1.0)
     first_epoch = 0
     best_validation_loss = 10e7
     deltaR = 0.4
@@ -74,7 +76,7 @@ if __name__ == '__main__':
     loss_fn = net.loss_fn
     metrics = net.metrics
 
-    model_dir = osp.join(os.environ['PWD'],'ckpts_puppi')
+    model_dir = osp.join(os.environ['PWD'],'ckpts_flat_deepmetlike_mse')
 
     # reload weights from restore_file if specified
     if args.restore_file is not None:
