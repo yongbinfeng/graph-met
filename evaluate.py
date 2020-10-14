@@ -61,8 +61,8 @@ def evaluate(model, loss_fn, dataloader, metrics, deltaR):
         resolutions, qT= metrics['resolution'](result, data.x, data.y, data.batch)
         for key in resolutions_arr:
             for i in range(len(resolutions_arr[key])):
-                resolutions_arr[key][i]=np.concatenate((resolutions_arr[key][i],resolutions[key][i]))
-        qT_arr=np.concatenate((qT_arr,qT))
+                resolutions_arr[key][i]=np.concatenate((resolutions_arr[key][i],resolutions[key][i].cpu().detach().numpy()))
+        qT_arr=np.concatenate((qT_arr,qT.cpu().detach().numpy()))
         loss_avg_arr.append(loss.item())
 
     # compute mean of all metrics in summary
