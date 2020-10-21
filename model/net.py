@@ -127,6 +127,16 @@ def resolution(weights, prediction, truth, batch):
     # Puppi MET
     v_puppiMET=torch.stack((puppiMETx, puppiMETy),dim=1)
 
+    deepMETResponse_x=truth[:,6]*torch.cos(truth[:,7])
+    deepMETResponse_y=truth[:,6]*torch.sin(truth[:,7])
+    # DeepMET Response Tune
+    v_deepMETResponse=torch.stack((deepMETResponse_x, deepMETResponse_y),dim=1)
+
+    deepMETResolution_x=truth[:,8]*torch.cos(truth[:,9])
+    deepMETResolution_y=truth[:,8]*torch.sin(truth[:,9])
+    # DeepMET Resolution Tune
+    v_deepMETResolution=torch.stack((deepMETResolution_x, deepMETResolution_y),dim=1)
+
     px=prediction[:,0]
     py=prediction[:,1]
     METx = scatter_add(weights*px, batch)
@@ -143,9 +153,11 @@ def resolution(weights, prediction, truth, batch):
         return [u_perp_predict.cpu().detach().numpy(), u_paral_predict.cpu().detach().numpy(), response.cpu().detach().numpy()]
 
     resolutions= {
-        'MET':      compute(-v_MET),
-        'pfMET':    compute(v_pfMET),
-        'puppiMET': compute(v_puppiMET)
+        'MET':               compute(-v_MET),
+        'pfMET':             compute(v_pfMET),
+        'puppiMET':          compute(v_puppiMET),
+        'deepMETResponse':   compute(v_deepMETResponse),
+        'deepMETResolution': compute(v_deepMETResolution)
     }
     return resolutions, truth[:,0].cpu().detach().numpy()
 
