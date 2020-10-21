@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     loss_fn = net.loss_fn
     metrics = net.metrics
-    model_dir = osp.join(os.environ['PWD'],'ckpts_puppi')
+    model_dir = osp.join(os.environ['PWD'],'ckpts_no_puppi')
     deltaR = 0.4
 
     # Reload weights from the saved file

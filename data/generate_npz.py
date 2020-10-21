@@ -16,7 +16,11 @@ def future_savez(i):
                        events.MET.pt[i],
                        events.MET.phi[i],
                        events.PuppiMET.pt[i],
-                       events.PuppiMET.phi[i]]#,genZ.pt[i].sum(),genZ.phi[i].sum()]
+                       events.PuppiMET.phi[i],
+                       events.DeepMETResponseTune.pt[i],
+                       events.DeepMETResponseTune.phi[i],
+                       events.DeepMETResolutionTune.pt[i],
+                       events.DeepMETResolutionTune.phi[i]]
         event_list = []
         n_particles=len(events.JetPFCands.pt[i])
         #print('Event:',i,'number of PF candidates:',n_particles)

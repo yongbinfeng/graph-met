@@ -74,7 +74,7 @@ if __name__ == '__main__':
     loss_fn = net.loss_fn
     metrics = net.metrics
 
-    model_dir = osp.join(os.environ['PWD'],'ckpts_puppi')
+    model_dir = osp.join(os.environ['PWD'],'ckpts_no_puppi')
 
     # reload weights from restore_file if specified
     if args.restore_file is not None:
