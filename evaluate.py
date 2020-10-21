@@ -40,7 +40,9 @@ def evaluate(model, loss_fn, dataloader, metrics, deltaR):
     resolutions_arr = {
         'MET':      [[],[],[]],
         'pfMET':    [[],[],[]],
-        'puppiMET': [[],[],[]]
+        'puppiMET': [[],[],[]],
+        'deepMETResponse': [[],[],[]],
+        'deepMETResolution': [[],[],[]]
     }
 
     # compute metrics over the dataset
@@ -139,7 +141,7 @@ if __name__ == '__main__':
 
     loss_fn = net.loss_fn
     metrics = net.metrics
-    model_dir = osp.join(os.environ['PWD'],'ckpts_no_puppi')
+    model_dir = osp.join(os.environ['PWD'],'ckpts_flat_convdepth2_encodeall_mse_new_data')
     deltaR = 0.4
 
     # Reload weights from the saved file
