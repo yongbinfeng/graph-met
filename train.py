@@ -19,6 +19,7 @@ import model.data_loader as data_loader
 from evaluate import evaluate
 import warnings
 warnings.simplefilter('ignore')
+from time import strftime, gmtime
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--restore_file', default=None,
@@ -56,12 +57,15 @@ def train(model, optimizer, scheduler, loss_fn, dataloader, epoch):
     scheduler.step(np.mean(loss_avg_arr))
     print('Training epoch: {:02d}, MSE: {:.4f}'.format(epoch, np.mean(loss_avg_arr)))
 
+    # return the training loss
+    return np.mean(loss_avg_arr)
+
 if __name__ == '__main__':
     args = parser.parse_args()
 
     dataloaders = data_loader.fetch_dataloader(data_dir=osp.join(os.environ['PWD'],args.data), 
                                                batch_size=60, 
-                                               validation_split=.5)
+                                               validation_split=.2)
     train_dl = dataloaders['train']
     test_dl = dataloaders['test']
 
@@ -81,6 +85,10 @@ if __name__ == '__main__':
     metrics = net.metrics
 
     model_dir = osp.join(os.environ['PWD'],args.ckpts)
+    loss_log = open(model_dir+'/loss.log', 'w')
+    loss_log.write('# loss log for training starting in '+strftime("%Y-%m-%d %H:%M:%S", gmtime()) + '\n')
+    loss_log.write('epoch, loss, val_loss\n')
+    loss_log.flush()
 
     # reload weights from restore_file if specified
     if args.restore_file is not None:
@@ -98,7 +106,7 @@ if __name__ == '__main__':
             print('Learning rate:', scheduler.state_dict()['_last_lr'][0])
 
         # compute number of batches in one epoch (one full pass over the training set)
-        train(model, optimizer, scheduler, loss_fn, train_dl, epoch)
+        train_loss = train(model, optimizer, scheduler, loss_fn, train_dl, epoch)
 
         # Save weights
         utils.save_checkpoint({'epoch': epoch,
@@ -112,6 +120,10 @@ if __name__ == '__main__':
         test_metrics, resolutions = evaluate(model, loss_fn, test_dl, metrics, deltaR, model_dir)
 
         validation_loss = test_metrics['loss']
+
+        loss_log.write('%d,%.2f,%.2f\n'%(epoch,train_loss, validation_loss))
+        loss_log.flush()
+
         is_best = (validation_loss<=best_validation_loss)
 
         # If best_eval, best_save_path
@@ -133,4 +145,6 @@ if __name__ == '__main__':
 
         utils.save_dict_to_json(test_metrics, osp.join(model_dir, 'metrics_val_last.json'))
         utils.save(resolutions, osp.join(model_dir, 'last.resolutions'))
+
+    loss_log.close()
 
